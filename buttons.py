@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 
 buttons = [18,         23,         24,         25,        8,     7 ]
 opcodes = ['next', 'enter', 'alt tab', 'previous', 'spacebar', 'shift' ]
-opcodes2 = ['key Left ', 'key Up ', 'key Down ', 'key Right ', 'key Return ', 'key Shift_L ']
+opcodes2 = ['key Left ', 'key Up ', 'key Down ', 'key Right ',  'key Return ', 'key Super_L ']
 # note the spaces after the commands above. they are necessary.
 
 # set the gpio pins to UP 
@@ -29,6 +29,7 @@ def keypress(sequence):
 	
 def main():
     while True:
+        time.sleep(0.3)
         #get the values for all push buttons
         button_state = []
         for button in buttons:
@@ -39,15 +40,28 @@ def main():
             print ("shutting down! (in 2 sec)")
             time.sleep(2)
             Popen(['sudo', 'poweroff'])
-            return
+            continue
+        #keypress for q to quit, vlc, htop, etc.
+        elif button_state[1] == 0  and button_state[2] == 0:
+            print ('closing application with "q" key')
+            command = '''xte -x:0  "key q" '''
+            Popen(command, shell=True)
+            continue
+        #spacebar to stop playback 
+        elif button_state[3] == 0 and button_state[4] == 0:
+            command = '''xte -x:0  "key space" '''
+            Popen(command, shell=True)
+            continue          
         # else we evaluate the rest of the button states, and press the relevant key(s)
         for item in range(len(button_state)):
             if button_state[item] == 0:
                 # print (opcodes2[item] ) #debugging, useful for tweaking the main loop delay
                 # send X key for keystroke in (for the given iteration of the loop) opcodes[button.output(index)]
                 keypress(str(opcodes2[item]).encode('ascii'))
+                if item == 5:
+                    command = '''xte -x:0  "keydown Super_L" "key Tab" "keyup Super_L" '''
+                    Popen(command, shell=True)
         print (repr(button_state)) #for debugging
-        time.sleep(0.35)
         del button_state
 
 if __name__ == '__main__':
